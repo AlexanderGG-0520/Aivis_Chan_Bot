@@ -117,6 +117,7 @@ async def join_command(interaction: discord.Interaction):
             await interaction.response.send_message(f"{channel.name} に移動しました。")
         else:
             global server_statuses
+            await voice_client.connect()
             await interaction.response.send_message(f"{channel.name} に接続しました。")
             server_statuses[interaction.guild.id] = ServerStatus(interaction.guild.id)
         
