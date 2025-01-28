@@ -20,6 +20,16 @@ current_speaker = 1196801504  # デフォルトの話者ID
 
 FFMPEG_PATH = "C:/ffmpeg/bin/ffmpeg.exe"
 
+class ServerStatus:
+    def __init__(self, voice_client: discord.VoiceClient):
+        self.voice_client = voice_client
+        self.current_speaker = current_speaker
+        asyncio.create_task(self.save_task())
+    
+        async def save_task(self):
+            while True:
+                # Add your save logic here
+                await asyncio.sleep(60)  # Save every 60 seconds
 class AivisAdapter:
     def __init__(self):
         # APIサーバーのエンドポイントURL
@@ -105,6 +115,7 @@ async def join_command(interaction: discord.Interaction):
         else:
             voice_client = await channel.connect()
             await interaction.response.send_message(f"{channel.name} に接続しました。")
+        self.server_statuses[ctx.guild.id] = ServerStatus(voice_client)
         
         # 接続完了時に音声を鳴らす
         path = speak_voice("接続しました。", current_speaker)
