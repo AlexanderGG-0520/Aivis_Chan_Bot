@@ -77,12 +77,12 @@ async def on_ready():
         joinserver = len(client.guilds)
         servers = str(joinserver)
         await client.change_presence(
-            activity=discord.Game(name="サーバー数:" + servers))
+            activity=discord.CustomActivity(name="サーバー数:" + servers))
         await asyncio.sleep(15)
         joinvc = len(client.voice_clients)
         vc = str(joinvc)
         await client.change_presence(
-            activity=discord.Game(name="VC:" + vc))
+            activity=discord.CustomActivity(name="VC:" + vc))
         await asyncio.sleep(15)
 
 @tree.command(
