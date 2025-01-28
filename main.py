@@ -8,6 +8,8 @@ import io
 import tempfile
 from config import TOKEN
 
+server_statuses = {}
+
 activity = discord.Activity(name="起動中…", type=discord.ActivityType.playing)
 intents = discord.Intents.default()
 intents.message_content = True
@@ -114,9 +116,9 @@ async def join_command(interaction: discord.Interaction):
             await voice_client.move_to(channel)
             await interaction.response.send_message(f"{channel.name} に移動しました。")
         else:
-            voice_client = await channel.connect()
+            global server_statuses
             await interaction.response.send_message(f"{channel.name} に接続しました。")
-        self.server_statuses[interaction.guild.id] = ServerStatus(interaction.guild.id)
+            server_statuses[interaction.guild.id] = ServerStatus(interaction.guild.id)
         
         # 接続完了時に音声を鳴らす
         path = speak_voice("接続しました。", current_speaker)
