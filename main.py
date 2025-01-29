@@ -188,9 +188,9 @@ async def on_message(message):
     if message.author.bot:
         return
     global voice_clients, text_channels, current_speaker
-    if message.guild.id in voice_clients and voice_clients[message.guild.id].is_connected() and message.channel == text_channels[message.guild.id]:
+    if message.guild.id in voice_clients and voice_clients[message.guild.id].is_connected() and message.guild.id in text_channels and message.channel == text_channels[message.guild.id]:
         # 絵文字、URL、添付ファイル、Embedを除外
-        filtered_content = re.sub(DISCORD_EMOJI_PATTERN, '', filtered_content)
+        filtered_content = re.sub(DISCORD_EMOJI_PATTERN, '', message.content)
         filtered_content = re.sub(URL_PATTERN, '', filtered_content)
         filtered_content = re.sub(ATTACHMENT_PATTERN, '', filtered_content)
         filtered_content = re.sub(EMBED_PATTERN, '', filtered_content)
