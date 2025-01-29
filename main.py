@@ -194,7 +194,7 @@ async def on_message(message):
     if re.search(URL_PATTERN, message.content):
         return
     if message.guild.id in voice_clients and voice_clients[message.guild.id].is_connected():
-        path = speak_voice(message.content, current_speaker)
+        path = speak_voice(current_speaker)
         while voice_clients[message.guild.id].is_playing():
             await asyncio.sleep(0.1)
         voice_clients[message.guild.id].play(create_ffmpeg_audio_source(path))
