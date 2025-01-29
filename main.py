@@ -181,27 +181,36 @@ URL_PATTERN = r"https?://[^\s]+"
 
 @client.event
 async def on_message(message):
-    print(f"Received message: {message.content}")
     if message.author.bot:
+        print("Message is from a bot, ignoring.")
         return
     if message.embeds:
+        print("Message contains embeds, ignoring.")
         return
     if message.attachments:
+        print("Message contains attachments, ignoring.")
         return
     if message.guild.emojis:
+        print("Message contains emojis, ignoring.")
         return
     if re.search(URL_PATTERN, message.content):
+        print("Message contains a URL, ignoring.")
         return
     global voice_clients, text_channels, current_speaker
     voice_client = voice_clients.get(message.guild.id)
     if voice_client and voice_client.is_connected():
+        print("Voice client is connected, handling message.")
         asyncio.create_task(handle_message(message, voice_client))
+    else:
+        print("Voice client is not connected, ignoring message.")
 
 async def handle_message(message, voice_client):
+    print(f"Handling message: {message.content}")
     path = speak_voice(message.content, current_speaker)
     while voice_client.is_playing():
         await asyncio.sleep(0.1)
     voice_client.play(create_ffmpeg_audio_source(path))
+    print(f"Finished playing message: {message.content}")
 
 print(f"TOKEN: {TOKEN}")  # デバッグ用にTOKENを出力
 client.run(TOKEN)
