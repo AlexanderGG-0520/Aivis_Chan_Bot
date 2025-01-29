@@ -106,7 +106,7 @@ async def on_ready():
     voice_channel="接続するボイスチャンネルを選択してください。",
     text_channel="メッセージを送信するテキストチャンネルを選択してください。"
 )
-async def join_command(interaction: discord.Interaction, voice_channel: discord.VoiceChannel = None, text_channel: discord.TextChannel = None):
+async def join_command(interaction: discord.Interaction, voice_channel: discord.VoiceChannel = None):
     global voice_clients, text_channels
     if interaction.guild is None:
         await interaction.response.send_message("このコマンドはサーバー内でのみ使用できます。", ephemeral=True)
