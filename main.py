@@ -19,7 +19,7 @@ client = discord.Client(intents=intents, activity=activity)
 tree = app_commands.CommandTree(client)
 voice_clients = {}
 text_channels = {}
-current_speaker = 1196801504  # デフォルトの話者ID
+current_speaker = {}
 
 FFMPEG_PATH = "C:/ffmpeg/bin/ffmpeg.exe"
 
@@ -210,11 +210,46 @@ async def on_message(message):
 
 async def handle_message(message, voice_client):
     print(f"Handling message: {message.content}")
-    path = speak_voice(message.content, current_speaker)
+    speaker_id = current_speaker.get(message.guild.id, 888753760)  # デフォルトの話者ID
+    path = speak_voice(message.content, speaker_id)
     while voice_client.is_playing():
         await asyncio.sleep(0.1)
     voice_client.play(create_ffmpeg_audio_source(path))
     print(f"Finished playing message: {message.content}")
+
+import json
+
+# スピーカー情報を読み込む
+with open('speakers.json', 'r', encoding='utf-8') as f:
+    speakers = json.load(f)
+
+# スピーカー名のリストを作成
+speaker_choices = [
+    app_commands.Choice(name=speaker['name'], value=speaker['name'])
+    for speaker in speakers
+]
+
+def get_speaker_id_by_name(speaker_name: str) -> int:
+    for speaker in speakers:
+        if speaker['name'] == speaker_name:
+            return speaker['id']
+    return None
+
+@tree.command(
+    name="set_speaker", description="話者を切り替えます。"
+)
+@app_commands.describe(
+    speaker_name="設定する話者の名前を選択してください。"
+)
+@app_commands.choices(speaker_name=speaker_choices)
+async def set_speaker_command(interaction: discord.Interaction, speaker_name: str):
+    global current_speaker
+    speaker_id = get_speaker_id_by_name(speaker_name)
+    if speaker_id:
+        current_speaker[interaction.guild.id] = speaker_id
+        await interaction.response.send_message(f"話者を {speaker_name} に切り替えました。")
+    else:
+        await interaction.response.send_message("無効な話者名です。", ephemeral=True)
 
 print(f"TOKEN: {TOKEN}")  # デバッグ用にTOKENを出力
 client.run(TOKEN)
