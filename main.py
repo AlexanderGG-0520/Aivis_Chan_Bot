@@ -103,9 +103,7 @@ async def on_ready():
     name="join", description="ボイスチャンネルに接続します。"
 )
 @app_commands.describe(
-    voice_channel="接続するボイスチャンネルを選択してください。",
-    text_channel="メッセージを送信するテキストチャンネルを選択してください。"
-)
+    voice_channel="接続するボイスチャンネルを選択してください。")
 async def join_command(interaction: discord.Interaction, voice_channel: discord.VoiceChannel = None):
     global voice_clients, text_channels
     if interaction.guild is None:
