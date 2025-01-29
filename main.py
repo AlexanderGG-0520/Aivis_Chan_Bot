@@ -192,11 +192,11 @@ async def on_message(message):
     if re.search(URL_PATTERN, message.content):
         return
     global voice_clients, text_channels, current_speaker
-    if voice_clients and voice_clients.is_connected() and message.channel == text_channels:
+    if message.guild.id in voice_clients and voice_clients[message.guild.id].is_connected() and message.guild.id in text_channels and message.channel == text_channels[message.guild.id]:
         path = speak_voice(message.content, current_speaker)
-        while voice_clients.is_playing():
+        while voice_clients[message.guild.id].is_playing():
             await asyncio.sleep(0.1)
-        voice_clients.play(create_ffmpeg_audio_source(path))
+        voice_clients[message.guild.id].play(create_ffmpeg_audio_source(path))
         print(f"Received message: {message.content}")
 
 print(f"TOKEN: {TOKEN}")  # デバッグ用にTOKENを出力
