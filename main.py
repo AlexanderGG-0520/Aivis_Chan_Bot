@@ -103,7 +103,8 @@ async def on_ready():
     name="join", description="ボイスチャンネルに接続します。"
 )
 @app_commands.describe(
-    voice_channel="接続するボイスチャンネルを選択してください。")
+    voice_channel="接続するボイスチャンネルを選択してください。"
+)
 async def join_command(interaction: discord.Interaction, voice_channel: discord.VoiceChannel = None):
     global voice_clients, text_channels
     if interaction.guild is None:
@@ -114,6 +115,7 @@ async def join_command(interaction: discord.Interaction, voice_channel: discord.
             await interaction.response.send_message("あなたはボイスチャンネルに接続していません。", ephemeral=True)
             return
         voice_channel = interaction.user.voice.channel
+    text_channels[interaction.guild.id] = interaction.channel
     try:
         if interaction.guild.id in voice_clients and voice_clients[interaction.guild.id].is_connected():
             await voice_clients[interaction.guild.id].move_to(voice_channel)
@@ -198,11 +200,11 @@ async def on_message(message):
         return
     global voice_clients, text_channels, current_speaker
     voice_client = voice_clients.get(message.guild.id)
-    if voice_client and voice_client.is_connected():
-        print("Voice client is connected, handling message.")
+    if voice_client and voice_client.is_connected() and message.channel == text_channels.get(message.guild.id):
+        print("Voice client is connected and message is in the correct channel, handling message.")
         asyncio.create_task(handle_message(message, voice_client))
     else:
-        print("Voice client is not connected, ignoring message.")
+        print("Voice client is not connected or message is in the wrong channel, ignoring message.")
 
 async def handle_message(message, voice_client):
     print(f"Handling message: {message.content}")
