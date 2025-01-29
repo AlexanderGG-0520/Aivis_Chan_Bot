@@ -102,24 +102,24 @@ async def on_ready():
 @tree.command(
     name="join", description="ボイスチャンネルに接続します。"
 )
-async def join_command(interaction: discord.Interaction):
+@app_commands.describe(
+    voice_channel="接続するボイスチャンネルを選択してください。",
+    text_channel="メッセージを送信するテキストチャンネルを選択してください。"
+)
+async def join_command(interaction: discord.Interaction, voice_channel: discord.VoiceChannel, text_channel: discord.TextChannel):
     global voice_clients, text_channels
     if interaction.guild is None:
         await interaction.response.send_message("このコマンドはサーバー内でのみ使用できます。", ephemeral=True)
         return
-    if interaction.user.voice is None or interaction.user.voice.channel is None:
-        await interaction.response.send_message("あなたはボイスチャンネルに接続していません。", ephemeral=True)
-        return
-    channel = interaction.user.voice.channel
-    text_channels[interaction.guild.id] = interaction.channel
+    text_channels[interaction.guild.id] = text_channel
     try:
         if interaction.guild.id in voice_clients and voice_clients[interaction.guild.id].is_connected():
-            await voice_clients[interaction.guild.id].move_to(channel)
-            await interaction.response.send_message(f"{channel.name} に移動しました。")
+            await voice_clients[interaction.guild.id].move_to(voice_channel)
+            await interaction.response.send_message(f"{voice_channel.name} に移動しました。")
         else:
             global server_statuses
-            voice_clients[interaction.guild.id] = await channel.connect()
-            await interaction.response.send_message(f"{channel.name} に接続しました。")
+            voice_clients[interaction.guild.id] = await voice_channel.connect()
+            await interaction.response.send_message(f"{voice_channel.name} に接続しました。")
             server_statuses[interaction.guild.id] = ServerStatus(interaction.guild.id)
         
         # 接続完了時に音声を鳴らす
