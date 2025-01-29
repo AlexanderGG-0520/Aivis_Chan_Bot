@@ -16,8 +16,8 @@ intents.message_content = True
 intents.voice_states = True
 client = discord.Client(intents=intents, activity=activity)
 tree = app_commands.CommandTree(client)
-voice_client = None
-text_channel = None
+voice_clients = {}
+text_channels = {}
 current_speaker = 1196801504  # デフォルトの話者ID
 
 FFMPEG_PATH = "C:/ffmpeg/bin/ffmpeg.exe"
@@ -102,7 +102,7 @@ async def on_ready():
     name="join", description="ボイスチャンネルに接続します。"
 )
 async def join_command(interaction: discord.Interaction):
-    global voice_client, text_channel
+    global voice_clients, text_channels
     if interaction.guild is None:
         await interaction.response.send_message("このコマンドはサーバー内でのみ使用できます。", ephemeral=True)
         return
@@ -110,22 +110,22 @@ async def join_command(interaction: discord.Interaction):
         await interaction.response.send_message("あなたはボイスチャンネルに接続していません。", ephemeral=True)
         return
     channel = interaction.user.voice.channel
-    text_channel = interaction.channel
+    text_channels[interaction.guild.id] = interaction.channel
     try:
-        if voice_client is not None and voice_client.is_connected():
-            await voice_client.move_to(channel)
+        if interaction.guild.id in voice_clients and voice_clients[interaction.guild.id].is_connected():
+            await voice_clients[interaction.guild.id].move_to(channel)
             await interaction.response.send_message(f"{channel.name} に移動しました。")
         else:
             global server_statuses
-            voice_client = await channel.connect()
+            voice_clients[interaction.guild.id] = await channel.connect()
             await interaction.response.send_message(f"{channel.name} に接続しました。")
             server_statuses[interaction.guild.id] = ServerStatus(interaction.guild.id)
         
         # 接続完了時に音声を鳴らす
         path = speak_voice("接続しました。", current_speaker)
-        while voice_client.is_playing():
+        while voice_clients[interaction.guild.id].is_playing():
             await asyncio.sleep(1)
-        voice_client.play(create_ffmpeg_audio_source(path))
+        voice_clients[interaction.guild.id].play(create_ffmpeg_audio_source(path))
     except discord.errors.ClientException as e:
         await interaction.response.send_message(f"エラーが発生しました: {str(e)}", ephemeral=True)
 
@@ -133,10 +133,10 @@ async def join_command(interaction: discord.Interaction):
     name="leave", description="ボイスチャンネルから切断します。"
 )
 async def leave_command(interaction: discord.Interaction):
-    global voice_client
-    if voice_client:
-        await voice_client.disconnect()
-        voice_client = None
+    global voice_clients
+    if interaction.guild.id in voice_clients:
+        await voice_clients[interaction.guild.id].disconnect()
+        del voice_clients[interaction.guild.id]
     await interaction.response.send_message("切断しました。")
 
 # ping応答コマンドを定義します
@@ -151,38 +151,38 @@ async def ping_command(interaction: discord.Interaction):
 
 @client.event
 async def on_voice_state_update(member, before, after):
-    global voice_client, current_speaker
-    if voice_client and voice_client.is_connected():
+    global voice_clients, current_speaker
+    if member.guild.id in voice_clients and voice_clients[member.guild.id].is_connected():
         if before.channel is None and after.channel is not None:
             # ユーザーがボイスチャンネルに参加したとき
-            if voice_client.channel == after.channel:
+            if voice_clients[member.guild.id].channel == after.channel:
                 path = speak_voice(f"{member.name} が入室しました。", current_speaker)
-                while voice_client.is_playing():
+                while voice_clients[member.guild.id].is_playing():
                     await asyncio.sleep(1)
-                voice_client.play(create_ffmpeg_audio_source(path))
+                voice_clients[member.guild.id].play(create_ffmpeg_audio_source(path))
         elif before.channel is not None and after.channel is None:
             # ユーザーがボイスチャンネルから退出したとき
-            if voice_client.channel == before.channel:
+            if voice_clients[member.guild.id].channel == before.channel:
                 path = speak_voice(f"{member.name} が退室しました。", current_speaker)
-                while voice_client.is_playing():
+                while voice_clients[member.guild.id].is_playing():
                     await asyncio.sleep(1)
-                voice_client.play(create_ffmpeg_audio_source(path))
+                voice_clients[member.guild.id].play(create_ffmpeg_audio_source(path))
                 
                 # ボイスチャンネルに誰もいなくなったら退室
-                if len(voice_client.channel.members) == 1:  # ボイスチャンネルにいるのがBOTだけの場合
-                    await voice_client.disconnect()
-                    voice_client = None
+                if len(voice_clients[member.guild.id].channel.members) == 1:  # ボイスチャンネルにいるのがBOTだけの場合
+                    await voice_clients[member.guild.id].disconnect()
+                    del voice_clients[member.guild.id]
 
 @client.event
 async def on_message(message):
     if message.author.bot:
         return
-    global voice_client, text_channel, current_speaker
-    if voice_client and voice_client.is_connected() and message.channel == text_channel:
+    global voice_clients, text_channels, current_speaker
+    if message.guild.id in voice_clients and voice_clients[message.guild.id].is_connected() and message.channel == text_channels[message.guild.id]:
         path = speak_voice(message.content, current_speaker)
-        while voice_client.is_playing():
+        while voice_clients[message.guild.id].is_playing():
             await asyncio.sleep(0.1)
-        voice_client.play(create_ffmpeg_audio_source(path))
+        voice_clients[message.guild.id].play(create_ffmpeg_audio_source(path))
 
 print(f"TOKEN: {TOKEN}")  # デバッグ用にTOKENを出力
 client.run(TOKEN)
