@@ -176,13 +176,8 @@ async def on_voice_state_update(member, before, after):
                     await voice_clients[member.guild.id].disconnect()
                     del voice_clients[member.guild.id]
 
-# Discord内の絵文字を除外するための正規表現パターン
-DISCORD_EMOJI_PATTERN = re.compile(r'<a?:\w+:\d+>')
-
 # URL、ファイル、EMBEDを除外するための正規表現パターン
-URL_PATTERN = re.compile(r'https?://\S+|www\.\S+')
-ATTACHMENT_PATTERN = re.compile(r'\[添付ファイル\]')
-EMBED_PATTERN = re.compile(r'\[Embed\]')
+URL_PATTERN = r"https?://[^\s]+"
 
 @client.event
 async def on_message(message):
