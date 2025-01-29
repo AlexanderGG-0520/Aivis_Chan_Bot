@@ -179,6 +179,11 @@ async def on_voice_state_update(member, before, after):
 # Discord内の絵文字を除外するための正規表現パターン
 DISCORD_EMOJI_PATTERN = re.compile(r'<a?:\w+:\d+>')
 
+# URL、ファイル、EMBEDを除外するための正規表現パターン
+URL_PATTERN = re.compile(r'https?://\S+|www\.\S+')
+ATTACHMENT_PATTERN = re.compile(r'\[添付ファイル\]')
+EMBED_PATTERN = re.compile(r'\[Embed\]')
+
 @client.event
 async def on_message(message):
     if message.author.bot:
@@ -187,7 +192,10 @@ async def on_message(message):
     if message.guild.id in voice_clients and voice_clients[message.guild.id].is_connected() and message.guild.id in text_channels and message.channel == text_channels[message.guild.id]:
         # 絵文字、URL、添付ファイル、Embedを除外
         filtered_content = re.sub(DISCORD_EMOJI_PATTERN, '', message.content)
-    if filtered_content.strip():  # 絵文字、URL、添付ファイル、Embed以外の内容がある場合のみ処理
+        filtered_content = re.sub(URL_PATTERN, '', filtered_content)
+        filtered_content = re.sub(ATTACHMENT_PATTERN, '', filtered_content)
+        filtered_content = re.sub(EMBED_PATTERN, '', filtered_content)
+        if filtered_content.strip():  # 絵文字、URL、添付ファイル、Embed以外の内容がある場合のみ処理
             path = speak_voice(filtered_content, current_speaker)
             while voice_clients[message.guild.id].is_playing():
                 await asyncio.sleep(0.1)
