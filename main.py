@@ -114,9 +114,6 @@ async def join_command(interaction: discord.Interaction, voice_channel: discord.
             await interaction.response.send_message("あなたはボイスチャンネルに接続していません。", ephemeral=True)
             return
         voice_channel = interaction.user.voice.channel
-    if text_channel is None:
-        text_channel = interaction.channel
-    text_channels[interaction.guild.id] = text_channel
     try:
         if interaction.guild.id in voice_clients and voice_clients[interaction.guild.id].is_connected():
             await voice_clients[interaction.guild.id].move_to(voice_channel)
