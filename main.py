@@ -7,6 +7,7 @@ import asyncio
 import io
 import tempfile
 from config import TOKEN
+import re
 
 server_statuses = {}
 
@@ -173,16 +174,31 @@ async def on_voice_state_update(member, before, after):
                     await voice_clients[member.guild.id].disconnect()
                     del voice_clients[member.guild.id]
 
+# 絵文字を除外するための正規表現パターン
+EMOJI_PATTERN = re.compile(
+    "["
+    "\U0001F600-\U0001F64F"  # Emoticons
+    "\U0001F300-\U0001F5FF"  # Symbols & Pictographs
+    "\U0001F680-\U0001F6FF"  # Transport & Map Symbols
+    "\U0001F1E0-\U0001F1FF"  # Flags (iOS)
+    "\U00002702-\U000027B0"  # Dingbats
+    "\U000024C2-\U0001F251" 
+    "]+"
+)
+
 @client.event
 async def on_message(message):
     if message.author.bot:
         return
     global voice_clients, text_channels, current_speaker
     if message.guild.id in voice_clients and voice_clients[message.guild.id].is_connected() and message.channel == text_channels[message.guild.id]:
-        path = speak_voice(message.content, current_speaker)
-        while voice_clients[message.guild.id].is_playing():
-            await asyncio.sleep(0.1)
-        voice_clients[message.guild.id].play(create_ffmpeg_audio_source(path))
+        # 絵文字を除外
+        filtered_content = re.sub(EMOJI_PATTERN, '', message.content)
+        if filtered_content.strip():  # 絵文字以外の内容がある場合のみ処理
+            path = speak_voice(filtered_content, current_speaker)
+            while voice_clients[message.guild.id].is_playing():
+                await asyncio.sleep(0.1)
+            voice_clients[message.guild.id].play(create_ffmpeg_audio_source(path))
 
 print(f"TOKEN: {TOKEN}")  # デバッグ用にTOKENを出力
 client.run(TOKEN)
