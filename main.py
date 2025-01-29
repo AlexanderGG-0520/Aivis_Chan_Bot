@@ -197,6 +197,7 @@ async def on_message(message):
         while voice_clients[message.guild.id].is_playing():
             await asyncio.sleep(0.1)
         voice_clients[message.guild.id].play(create_ffmpeg_audio_source(path))
+        print(f"Received message: {message.content}")
 
 print(f"TOKEN: {TOKEN}")  # デバッグ用にTOKENを出力
 client.run(TOKEN)
