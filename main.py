@@ -161,14 +161,16 @@ async def on_voice_state_update(member, before, after):
         if before.channel is None and after.channel is not None:
             # ユーザーがボイスチャンネルに参加したとき
             if voice_clients[member.guild.id].channel == after.channel:
-                path = speak_voice(f"{member.name} が入室しました。", current_speaker)
+                nickname = member.nick if member.nick else member.name
+                path = speak_voice(f"{nickname} が入室しました。", current_speaker)
                 while voice_clients[member.guild.id].is_playing():
                     await asyncio.sleep(1)
                 voice_clients[member.guild.id].play(create_ffmpeg_audio_source(path))
         elif before.channel is not None and after.channel is None:
             # ユーザーがボイスチャンネルから退出したとき
             if voice_clients[member.guild.id].channel == before.channel:
-                path = speak_voice(f"{member.name} が退室しました。", current_speaker)
+                nickname = member.nick if member.nick else member.name
+                path = speak_voice(f"{nickname} が退室しました。", current_speaker)
                 while voice_clients[member.guild.id].is_playing():
                     await asyncio.sleep(1)
                 voice_clients[member.guild.id].play(create_ffmpeg_audio_source(path))
