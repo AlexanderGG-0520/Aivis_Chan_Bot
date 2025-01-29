@@ -187,7 +187,7 @@ async def on_message(message):
     if message.guild.id in voice_clients and voice_clients[message.guild.id].is_connected() and message.guild.id in text_channels and message.channel == text_channels[message.guild.id]:
         # 絵文字、URL、添付ファイル、Embedを除外
         filtered_content = re.sub(DISCORD_EMOJI_PATTERN, '', message.content)
-        if filtered_content.strip():  # 絵文字、URL、添付ファイル、Embed以外の内容がある場合のみ処理
+    if filtered_content.strip():  # 絵文字、URL、添付ファイル、Embed以外の内容がある場合のみ処理
             path = speak_voice(filtered_content, current_speaker)
             while voice_clients[message.guild.id].is_playing():
                 await asyncio.sleep(0.1)
