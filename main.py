@@ -39,7 +39,7 @@ class AivisAdapter:
         # APIサーバーのエンドポイントURL
         self.URL = "http://127.0.0.1:10101"
         # 話者ID (話させたい音声モデルidに変更してください)
-        self.speaker = 1196801504
+        self.speaker = 888753760
 
     def speak_voice(self, text: str, voice_client: discord.VoiceClient):
         params = {"text": text, "speaker": self.speaker}
