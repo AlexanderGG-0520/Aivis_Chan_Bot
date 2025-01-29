@@ -161,7 +161,7 @@ async def on_voice_state_update(member, before, after):
         if before.channel is None and after.channel is not None:
             # ユーザーがボイスチャンネルに参加したとき
             if voice_clients[member.guild.id].channel == after.channel:
-                nickname = member.nick if member.nick else member.name
+                nickname = member.display_name
                 path = speak_voice(f"{nickname} が入室しました。", current_speaker)
                 while voice_clients[member.guild.id].is_playing():
                     await asyncio.sleep(1)
