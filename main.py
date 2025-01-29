@@ -188,18 +188,20 @@ EMBED_PATTERN = re.compile(r'\[Embed\]')
 async def on_message(message):
     if message.author.bot:
         return
+    if message.embeds:
+        return
+    if message.attachments:
+        return
+    if message.guild.emojis:
+        return
+    if re.search(URL_PATTERN, message.content):
+        return
     global voice_clients, text_channels, current_speaker
     if message.guild.id in voice_clients and voice_clients[message.guild.id].is_connected() and message.guild.id in text_channels and message.channel == text_channels[message.guild.id]:
-        # 絵文字、URL、添付ファイル、Embedを除外
-        filtered_content = re.sub(DISCORD_EMOJI_PATTERN, '', message.content)
-        filtered_content = re.sub(URL_PATTERN, '', filtered_content)
-        filtered_content = re.sub(ATTACHMENT_PATTERN, '', filtered_content)
-        filtered_content = re.sub(EMBED_PATTERN, '', filtered_content)
-        if filtered_content.strip():  # 絵文字、URL、添付ファイル、Embed以外の内容がある場合のみ処理
-            path = speak_voice(filtered_content, current_speaker)
-            while voice_clients[message.guild.id].is_playing():
-                await asyncio.sleep(0.1)
-            voice_clients[message.guild.id].play(create_ffmpeg_audio_source(path))
+        path = speak_voice(current_speaker)
+        while voice_clients[message.guild.id].is_playing():
+            await asyncio.sleep(0.1)
+        voice_clients[message.guild.id].play(create_ffmpeg_audio_source(path))
 
 print(f"TOKEN: {TOKEN}")  # デバッグ用にTOKENを出力
 client.run(TOKEN)
