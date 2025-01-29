@@ -181,7 +181,6 @@ URL_PATTERN = r"https?://[^\s]+"
 
 @client.event
 async def on_message(message):
-    global voice_clients, text_channels, current_speaker
     print(f"Received message: {message.content}")
     if message.author.bot:
         return
@@ -193,6 +192,7 @@ async def on_message(message):
         return
     if re.search(URL_PATTERN):
         return
+    global voice_clients, text_channels, current_speaker
     if message.guild.id in voice_clients and voice_clients[message.guild.id].is_connected():
         path = speak_voice(current_speaker)
         while voice_clients[message.guild.id].is_playing():
