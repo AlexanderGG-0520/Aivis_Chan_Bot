@@ -190,7 +190,7 @@ async def on_message(message):
     if message.attachments:
         print("Message contains attachments, ignoring.")
         return
-    if message.guild.emojis:
+    if any(char in message.content for char in message.guild.emojis):
         print("Message contains emojis, ignoring.")
         return
     if re.search(URL_PATTERN, message.content):
