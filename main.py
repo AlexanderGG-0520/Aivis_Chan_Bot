@@ -181,6 +181,7 @@ URL_PATTERN = r"https?://[^\s]+"
 
 @client.event
 async def on_message(message):
+    global voice_clients, text_channels, current_speaker
     print(f"Received message: {message.content}")
     if message.author.bot:
         return
@@ -194,7 +195,6 @@ async def on_message(message):
         return
     else:
         if message.guild.id in voice_clients and voice_clients[message.guild.id].is_connected():
-            global voice_clients, text_channels, current_speaker
             path = speak_voice(message.content, current_speaker)
             while voice_clients[message.guild.id].is_playing():
                 await asyncio.sleep(0.1)
