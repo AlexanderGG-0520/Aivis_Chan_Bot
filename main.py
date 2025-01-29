@@ -191,7 +191,7 @@ async def on_message(message):
         return
     if message.guild.emojis:
         return
-    if re.search(URL_PATTERN, message.content):
+    if re.search(URL_PATTERN):
         return
     if message.guild.id in voice_clients and voice_clients[message.guild.id].is_connected():
         path = speak_voice(current_speaker)
