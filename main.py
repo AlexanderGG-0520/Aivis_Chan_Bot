@@ -195,10 +195,13 @@ async def on_message(message):
     global voice_clients, text_channels, current_speaker
     voice_client = voice_clients.get(message.guild.id)
     if voice_client and voice_client.is_connected():
-        path = speak_voice(message.content, current_speaker)
-        while voice_client.is_playing():
-            await asyncio.sleep(0.1)
-        voice_client.play(create_ffmpeg_audio_source(path))
+        asyncio.create_task(handle_message(message, voice_client))
+
+async def handle_message(message, voice_client):
+    path = speak_voice(message.content, current_speaker)
+    while voice_client.is_playing():
+        await asyncio.sleep(0.1)
+    voice_client.play(create_ffmpeg_audio_source(path))
 
 print(f"TOKEN: {TOKEN}")  # デバッグ用にTOKENを出力
 client.run(TOKEN)
