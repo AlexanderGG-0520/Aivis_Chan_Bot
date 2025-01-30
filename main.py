@@ -225,21 +225,16 @@ with open('speakers.json', 'r', encoding='utf-8') as f:
 
 # スピーカー名とスタイルのリストを作成
 speaker_choices = [
-    app_commands.Choice(name=f"{speaker.get('name')} - {style.get('name')}", value=f"{speaker.get('id')}-{style.get('id')}")
+    app_commands.Choice(name=f"{speaker.get('name')} - {style.get('name')}", value=f"{style.get('id')}")
     for speaker in speakers
     for style in speaker.get('styles', [])
 ]
 
-def get_speaker_info_by_choice(choice: str):
-    try:
-        speaker_id, style_id = map(int, choice.split('-'))
-    except ValueError:
-        return None, None
+def get_speaker_info_by_id(style_id: int):
     for speaker in speakers:
-        if speaker.get('id') == speaker_id:
-            for style in speaker.get('styles', []):
-                if style.get('id') == style_id:
-                    return speaker, style
+        for style in speaker.get('styles', []):
+            if style.get('id') == style_id:
+                return speaker, style
     return None, None
 
 @tree.command(
@@ -249,10 +244,10 @@ def get_speaker_info_by_choice(choice: str):
     speaker_choice="設定する話者とスタイルを選択してください。"
 )
 @app_commands.choices(speaker_choice=speaker_choices)
-async def set_speaker_command(interaction: discord.Interaction, speaker_choice: str):
+async def set_speaker_command(interaction: discord.Interaction, speaker_choice: int):
     print(f"Received speaker_choice: {speaker_choice}")  # デバッグ用にspeaker_choiceを出力
     global current_speaker
-    speaker_info, style_info = get_speaker_info_by_choice(speaker_choice)
+    speaker_info, style_info = get_speaker_info_by_id(speaker_choice)
     if speaker_info and style_info:
         current_speaker[interaction.guild.id] = style_info['id']
         await interaction.response.send_message(f"話者を {speaker_info['name']} のスタイル {style_info['name']} に切り替えました。")
