@@ -252,8 +252,8 @@ def get_speaker_info_by_choice(choice: str):
 async def set_speaker_command(interaction: discord.Interaction, speaker_choice: str):
     print(f"Received speaker_choice: {speaker_choice}")  # デバッグ用にspeaker_choiceを出力
     global current_speaker
-    style_info = get_speaker_info_by_choice(speaker_choice)
-    if style_info:
+    speaker_info, style_info = get_speaker_info_by_choice(speaker_choice)
+    if speaker_info and style_info:
         current_speaker[interaction.guild.id] = style_info['id']
         await interaction.response.send_message(f"話者を {speaker_info['name']} のスタイル {style_info['name']} に切り替えました。")
     else:
