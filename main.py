@@ -384,7 +384,7 @@ async def set_tempo_command(interaction: discord.Interaction, tempo: float):
 )
 @app_commands.describe(
     word="登録する単語を入力してください。",
-    pronunciation="単語の発音を入力してください。"
+    pronunciation="単語の発音をカタカナで入力してください。"
 )
 async def add_word_command(interaction: discord.Interaction, word: str, pronunciation: str):
     # 辞書をAPIサーバーに登録
@@ -399,7 +399,7 @@ async def add_word_command(interaction: discord.Interaction, word: str, pronunci
 )
 @app_commands.describe(
     word="編集する単語を入力してください。",
-    new_pronunciation="新しい発音を入力してください。"
+    new_pronunciation="新しい発音をカタカナで入力してください。"
 )
 async def edit_word_command(interaction: discord.Interaction, word: str, new_pronunciation: str):
     # 辞書をAPIサーバーに登録
