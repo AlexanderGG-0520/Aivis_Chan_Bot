@@ -19,7 +19,7 @@ client = discord.Client(intents=intents, activity=activity)
 tree = app_commands.CommandTree(client)
 voice_clients = {}
 text_channels = {}
-current_speaker = {}
+current_speaker = 888753760  # デフォルトの話者ID
 
 FFMPEG_PATH = "C:/ffmpeg/bin/ffmpeg.exe"
 
