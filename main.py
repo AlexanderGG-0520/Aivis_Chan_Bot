@@ -69,8 +69,27 @@ def post_synthesis(audio_query: dict, speaker: int):
     )
     return response.content
 
-def speak_voice(text: str, speaker: int):
+voice_settings = {
+    "volume": {},
+    "pitch": {},
+    "rate": {},
+    "speed": {},
+    "style_strength": {},
+    "tempo": {}
+}
+
+def adjust_audio_query(audio_query: dict, guild_id: int):
+    audio_query["volumeScale"] = voice_settings["volume"].get(guild_id, 1.0)
+    audio_query["pitchScale"] = voice_settings["pitch"].get(guild_id, 0.0)
+    audio_query["rateScale"] = voice_settings["rate"].get(guild_id, 1.0)
+    audio_query["speedScale"] = voice_settings["speed"].get(guild_id, 1.0)
+    audio_query["styleStrength"] = voice_settings["style_strength"].get(guild_id, 1.0)
+    audio_query["tempoScale"] = voice_settings["tempo"].get(guild_id, 1.0)
+    return audio_query
+
+def speak_voice(text: str, speaker: int, guild_id: int):
     audio_query = post_audio_query(text, speaker)
+    audio_query = adjust_audio_query(audio_query, guild_id)
     audio_content = post_synthesis(audio_query, speaker)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio_file:
         temp_audio_file.write(audio_content)
@@ -127,7 +146,7 @@ async def join_command(interaction: discord.Interaction, voice_channel: discord.
             server_statuses[interaction.guild.id] = ServerStatus(interaction.guild.id)
         
         # 接続完了時に音声を鳴らす
-        path = speak_voice("接続しました。", current_speaker.get(interaction.guild.id, 888753760))
+        path = speak_voice("接続しました。", current_speaker.get(interaction.guild.id, 888753760), interaction.guild.id)
         while voice_clients[interaction.guild.id].is_playing():
             await asyncio.sleep(1)
         voice_clients[interaction.guild.id].play(create_ffmpeg_audio_source(path))
@@ -162,7 +181,7 @@ async def on_voice_state_update(member, before, after):
             # ユーザーがボイスチャンネルに参加したとき
             if voice_clients[member.guild.id].channel == after.channel:
                 nickname = member.display_name
-                path = speak_voice(f"{nickname} が入室しました。", current_speaker.get(member.guild.id, 888753760))
+                path = speak_voice(f"{nickname} が入室しました。", current_speaker.get(member.guild.id, 888753760), member.guild.id)
                 while voice_clients[member.guild.id].is_playing():
                     await asyncio.sleep(1)
                 voice_clients[member.guild.id].play(create_ffmpeg_audio_source(path))
@@ -170,7 +189,7 @@ async def on_voice_state_update(member, before, after):
             # ユーザーがボイスチャンネルから退出したとき
             if voice_clients[member.guild.id].channel == before.channel:
                 nickname = member.display_name
-                path = speak_voice(f"{nickname} が退室しました。", current_speaker.get(member.guild.id, 888753760))
+                path = speak_voice(f"{nickname} が退室しました。", current_speaker.get(member.guild.id, 888753760), member.guild.id)
                 while voice_clients[member.guild.id].is_playing():
                     await asyncio.sleep(1)
                 voice_clients[member.guild.id].play(create_ffmpeg_audio_source(path))
@@ -211,7 +230,7 @@ async def on_message(message):
 async def handle_message(message, voice_client):
     print(f"Handling message: {message.content}")
     speaker_id = current_speaker.get(message.guild.id, 888753760)  # デフォルトの話者ID
-    path = speak_voice(message.content, speaker_id)
+    path = speak_voice(message.content, speaker_id, message.guild.id)
     while voice_client.is_playing():
         await asyncio.sleep(0.1)
     voice_client.play(create_ffmpeg_audio_source(path))
@@ -253,6 +272,84 @@ async def set_speaker_command(interaction: discord.Interaction, speaker_choice: 
         await interaction.response.send_message(f"話者を {speaker_info['name']} のスタイル {style_info['name']} に切り替えました。")
     else:
         await interaction.response.send_message("無効な選択です。", ephemeral=True)
+
+@tree.command(
+    name="set_volume", description="音量を設定します。"
+)
+@app_commands.describe(
+    volume="設定する音量を入力してください (0.0 - 2.0)。"
+)
+async def set_volume_command(interaction: discord.Interaction, volume: float):
+    if 0.0 <= volume <= 2.0:
+        voice_settings["volume"][interaction.guild.id] = volume
+        await interaction.response.send_message(f"音量を {volume} に設定しました。")
+    else:
+        await interaction.response.send_message("無効な音量値です。0.0から2.0の間で設定してください。", ephemeral=True)
+
+@tree.command(
+    name="set_pitch", description="ピッチを設定します。"
+)
+@app_commands.describe(
+    pitch="設定するピッチを入力してください (-1.0 - 1.0)。"
+)
+async def set_pitch_command(interaction: discord.Interaction, pitch: float):
+    if -1.0 <= pitch <= 1.0:
+        voice_settings["pitch"][interaction.guild.id] = pitch
+        await interaction.response.send_message(f"ピッチを {pitch} に設定しました。")
+    else:
+        await interaction.response.send_message("無効なピッチ値です。-1.0から1.0の間で設定してください。", ephemeral=True)
+
+@tree.command(
+    name="set_rate", description="音程を設定します。"
+)
+@app_commands.describe(
+    rate="設定する音程を入力してください (0.5 - 2.0)。"
+)
+async def set_rate_command(interaction: discord.Interaction, rate: float):
+    if 0.5 <= rate <= 2.0:
+        voice_settings["rate"][interaction.guild.id] = rate
+        await interaction.response.send_message(f"音程を {rate} に設定しました。")
+    else:
+        await interaction.response.send_message("無効な音程値です。0.5から2.0の間で設定してください。", ephemeral=True)
+
+@tree.command(
+    name="set_speed", description="話速を設定します。"
+)
+@app_commands.describe(
+    speed="設定する話速を入力してください (0.5 - 2.0)。"
+)
+async def set_speed_command(interaction: discord.Interaction, speed: float):
+    if 0.5 <= speed <= 2.0:
+        voice_settings["speed"][interaction.guild.id] = speed
+        await interaction.response.send_message(f"話速を {speed} に設定しました。")
+    else:
+        await interaction.response.send_message("無効な話速値です。0.5から2.0の間で設定してください。", ephemeral=True)
+
+@tree.command(
+    name="set_style_strength", description="スタイルの強さを設定します。"
+)
+@app_commands.describe(
+    style_strength="設定するスタイルの強さを入力してください (0.0 - 2.0)。"
+)
+async def set_style_strength_command(interaction: discord.Interaction, style_strength: float):
+    if 0.0 <= style_strength <= 2.0:
+        voice_settings["style_strength"][interaction.guild.id] = style_strength
+        await interaction.response.send_message(f"スタイルの強さを {style_strength} に設定しました。")
+    else:
+        await interaction.response.send_message("無効なスタイルの強さです。0.0から2.0の間で設定してください。", ephemeral=True)
+
+@tree.command(
+    name="set_tempo", description="テンポの緩急を設定します。"
+)
+@app_commands.describe(
+    tempo="設定するテンポの緩急を入力してください (0.5 - 2.0)。"
+)
+async def set_tempo_command(interaction: discord.Interaction, tempo: float):
+    if 0.5 <= tempo <= 2.0:
+        voice_settings["tempo"][interaction.guild.id] = tempo
+        await interaction.response.send_message(f"テンポの緩急を {tempo} に設定しました。")
+    else:
+        await interaction.response.send_message("無効なテンポの緩急です。0.5から2.0の間で設定してください。", ephemeral=True)
 
 print(f"TOKEN: {TOKEN}")  # デバッグ用にTOKENを出力
 client.run(TOKEN)
