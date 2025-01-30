@@ -8,6 +8,7 @@ import io
 import tempfile
 from config import TOKEN
 import re
+import os
 
 server_statuses = {}
 
@@ -95,6 +96,36 @@ def speak_voice(text: str, speaker: int, guild_id: int):
         temp_audio_file.write(audio_content)
         temp_audio_file_path = temp_audio_file.name
     return temp_audio_file_path
+
+DICTIONARY_FILE = "guild_dictionaries.json"
+
+def load_dictionaries():
+    if os.path.exists(DICTIONARY_FILE):
+        with open(DICTIONARY_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {}
+
+def save_dictionaries():
+    with open(DICTIONARY_FILE, 'w', encoding='utf-8') as f:
+        json.dump(guild_dictionaries, f, ensure_ascii=False, indent=4)
+
+guild_dictionaries = load_dictionaries()
+
+def add_to_dictionary(guild_id: int, word: str, pronunciation: str):
+    if guild_id not in guild_dictionaries:
+        guild_dictionaries[guild_id] = {}
+    guild_dictionaries[guild_id][word] = pronunciation
+    save_dictionaries()
+
+def edit_dictionary(guild_id: int, word: str, new_pronunciation: str):
+    if guild_id in guild_dictionaries and word in guild_dictionaries[guild_id]:
+        guild_dictionaries[guild_id][word] = new_pronunciation
+        save_dictionaries()
+
+def remove_from_dictionary(guild_id: int, word: str):
+    if guild_id in guild_dictionaries and word in guild_dictionaries[guild_id]:
+        del guild_dictionaries[guild_id][word]
+        save_dictionaries()
 
 @client.event
 async def on_ready():
@@ -337,6 +368,38 @@ async def set_tempo_command(interaction: discord.Interaction, tempo: float):
         await interaction.response.send_message(f"テンポの緩急を {tempo} に設定しました。")
     else:
         await interaction.response.send_message("無効なテンポの緩急です。0.5から2.0の間で設定してください。", ephemeral=True)
+
+@tree.command(
+    name="add_word", description="辞書に単語を登録します。"
+)
+@app_commands.describe(
+    word="登録する単語を入力してください。",
+    pronunciation="単語の発音を入力してください。"
+)
+async def add_word_command(interaction: discord.Interaction, word: str, pronunciation: str):
+    add_to_dictionary(interaction.guild.id, word, pronunciation)
+    await interaction.response.send_message(f"単語 '{word}' を発音 '{pronunciation}' で辞書に登録しました。")
+
+@tree.command(
+    name="edit_word", description="辞書の単語を編集します。"
+)
+@app_commands.describe(
+    word="編集する単語を入力してください。",
+    new_pronunciation="新しい発音を入力してください。"
+)
+async def edit_word_command(interaction: discord.Interaction, word: str, new_pronunciation: str):
+    edit_dictionary(interaction.guild.id, word, new_pronunciation)
+    await interaction.response.send_message(f"単語 '{word}' の発音を '{new_pronunciation}' に編集しました。")
+
+@tree.command(
+    name="remove_word", description="辞書から単語を削除します。"
+)
+@app_commands.describe(
+    word="削除する単語を入力してください。"
+)
+async def remove_word_command(interaction: discord.Interaction, word: str):
+    remove_from_dictionary(interaction.guild.id, word)
+    await interaction.response.send_message(f"単語 '{word}' を辞書から削除しました。")
 
 print(f"TOKEN: {TOKEN}")  # デバッグ用にTOKENを出力
 client.run(TOKEN)
