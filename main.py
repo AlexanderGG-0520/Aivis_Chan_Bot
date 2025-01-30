@@ -91,16 +91,19 @@ def adjust_audio_query(audio_query: dict, guild_id: int):
 DICTIONARY_FILE = "guild_dictionaries.json"
 
 def load_dictionaries():
+    global guild_dictionaries
     if os.path.exists(DICTIONARY_FILE):
         with open(DICTIONARY_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return {}
+            guild_dictionaries = json.load(f)
+    else:
+        guild_dictionaries = {}
 
 def save_dictionaries():
     with open(DICTIONARY_FILE, 'w', encoding='utf-8') as f:
         json.dump(guild_dictionaries, f, ensure_ascii=False, indent=4)
 
-guild_dictionaries = load_dictionaries()
+guild_dictionaries = {}
+load_dictionaries()
 
 def add_to_dictionary(guild_id: int, word: str, pronunciation: str):
     if guild_id not in guild_dictionaries:
@@ -119,11 +122,10 @@ def remove_from_dictionary(guild_id: int, word: str):
         save_dictionaries()
 
 def apply_dictionary(text: str, guild_id: int) -> str:
-    dictionaries = load_dictionaries()
-    if guild_id in dictionaries:
-        for word, pronunciation in dictionaries[guild_id].items():
+    if guild_id in guild_dictionaries:
+        for word, pronunciation in guild_dictionaries[guild_id].items():
             text = text.replace(word, pronunciation)
-    print(f"Applied dictionary for guild {guild_id}: {dictionaries.get(guild_id, {})}")  # デバッグ用に辞書を出力
+    print(f"Applied dictionary for guild {guild_id}: {guild_dictionaries.get(guild_id, {})}")  # デバッグ用に辞書を出力
     return text
 
 def speak_voice(text: str, speaker: int, guild_id: int):
