@@ -270,7 +270,7 @@ async def handle_message(message, voice_client):
     print(f"Handling message: {message.content}")
     speaker_id = current_speaker.get(message.guild.id, 888753760)  # デフォルトの話者ID
     text = apply_dictionary(message.content, message.guild.id)
-    path = speak_voice(text, speaker_id, message.guild.id)
+    path = speak_voice(text, speaker_id)
     while voice_client.is_playing():
         await asyncio.sleep(0.1)
     voice_client.play(create_ffmpeg_audio_source(path))
