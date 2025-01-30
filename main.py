@@ -249,7 +249,7 @@ async def set_speaker_command(interaction: discord.Interaction, speaker_choice: 
     global current_speaker
     speaker_info, style_info = get_speaker_info_by_id(int(speaker_choice))
     if speaker_info and style_info:
-        current_speaker[interaction.guild.id] = style_info['id']
+        current_speaker[interaction.guild.id] = int(speaker_choice)
         await interaction.response.send_message(f"話者を {speaker_info['name']} のスタイル {style_info['name']} に切り替えました。")
     else:
         await interaction.response.send_message("無効な選択です。", ephemeral=True)
