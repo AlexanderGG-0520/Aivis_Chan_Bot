@@ -1,3 +1,5 @@
 /.env
 /__pycache__
 guild_dictionaries.json
+openapi.json
+speakers.json
