@@ -287,30 +287,17 @@ async def set_volume_command(interaction: discord.Interaction, volume: float):
         await interaction.response.send_message("無効な音量値です。0.0から2.0の間で設定してください。", ephemeral=True)
 
 @tree.command(
-    name="set_pitch", description="ピッチを設定します。"
+    name="set_pitch", description="音高を設定します。"
 )
 @app_commands.describe(
-    pitch="設定するピッチを入力してください (-1.0 - 1.0)。"
+    pitch="設定する音高を入力してください (-1.0 - 1.0)。"
 )
 async def set_pitch_command(interaction: discord.Interaction, pitch: float):
     if -1.0 <= pitch <= 1.0:
         voice_settings["pitch"][interaction.guild.id] = pitch
-        await interaction.response.send_message(f"ピッチを {pitch} に設定しました。")
+        await interaction.response.send_message(f"音高を {pitch} に設定しました。")
     else:
-        await interaction.response.send_message("無効なピッチ値です。-1.0から1.0の間で設定してください。", ephemeral=True)
-
-@tree.command(
-    name="set_rate", description="音程を設定します。"
-)
-@app_commands.describe(
-    rate="設定する音程を入力してください (0.5 - 2.0)。"
-)
-async def set_rate_command(interaction: discord.Interaction, rate: float):
-    if 0.5 <= rate <= 2.0:
-        voice_settings["rate"][interaction.guild.id] = rate
-        await interaction.response.send_message(f"音程を {rate} に設定しました。")
-    else:
-        await interaction.response.send_message("無効な音程値です。0.5から2.0の間で設定してください。", ephemeral=True)
+        await interaction.response.send_message("無効な音高値です。-1.0から1.0の間で設定してください。", ephemeral=True)
 
 @tree.command(
     name="set_speed", description="話速を設定します。"
