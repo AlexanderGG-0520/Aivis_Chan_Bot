@@ -379,21 +379,38 @@ async def set_tempo_command(interaction: discord.Interaction, tempo: float):
     else:
         await interaction.response.send_message("無効なテンポの緩急です。0.5から2.0の間で設定してください。", ephemeral=True)
 
+word_type_choices = [
+    app_commands.Choice(name="PROPER_NOUN", value="PROPER_NOUN"),
+    app_commands.Choice(name="LOCATION_NAME", value="LOCATION_NAME"),
+    app_commands.Choice(name="ORGANIZATION_NAME", value="ORGANIZATION_NAME"),
+    app_commands.Choice(name="PERSON_NAME", value="PERSON_NAME"),
+    app_commands.Choice(name="PERSON_FAMILY_NAME", value="PERSON_FAMILY_NAME"),
+    app_commands.Choice(name="PERSON_GIVEN_NAME", value="PERSON_GIVEN_NAME"),
+    app_commands.Choice(name="COMMON_NOUN", value="COMMON_NOUN"),
+    app_commands.Choice(name="VERB", value="VERB"),
+    app_commands.Choice(name="ADJECTIVE", value="ADJECTIVE"),
+    app_commands.Choice(name="SUFFIX", value="SUFFIX"),
+]
+
 @tree.command(
     name="add_word", description="辞書に単語を登録します。"
 )
 @app_commands.describe(
     word="登録する単語を入力してください。",
     pronunciation="単語の発音をカタカナで入力してください。",
-    accent_type="アクセントの種類を入力してください。"
+    accent_type="アクセントの種類を入力してください。",
+    word_type="単語の品詞を選択してください。"
 )
-async def add_word_command(interaction: discord.Interaction, word: str, pronunciation: str, accent_type: int):
+@app_commands.choices(word_type=word_type_choices)
+async def add_word_command(interaction: discord.Interaction, word: str, pronunciation: str, accent_type: int, word_type: None):
     # 辞書をAPIサーバーに登録
-    response = requests.post("http://127.0.0.1:10101/user_dict_word", json={"surface": word, "pronunciation": pronunciation, "accent_type": accent_type})
+    response = requests.post(f"http://127.0.0.1:10101/user_dict_word?surface={word}&pronunciation={pronunciation}&accent_type={accent_type}&word_type={word_type}")
     if response.status_code == 200:
-        await interaction.response.send_message(f"単語 '{word}' を発音 '{pronunciation}' で辞書に登録しました。")
+        await interaction.response.send_message(f"単語 '{word}' を発音 '{pronunciation}', アクセント '{accent_type}', 品詞 '{word_type}'で辞書に登録しました。")
     else:
         await interaction.response.send_message(f"単語 '{word}' の登録に失敗しました。", ephemeral=True)
+        response = requests.get(f"http://localhost:10101/user_dict_word?surface={word}")
+        print(response.json())  # 既に登録されているか確認
 
 def get_word_uuid(word: str):
     response = requests.get(f"http://127.0.0.1:10101/user_dict?surface={word}")
@@ -407,18 +424,20 @@ def get_word_uuid(word: str):
     name="edit_word", description="辞書の単語を編集します。"
 )
 @app_commands.describe(
-    word="編集する単語を入力してください。",
-    new_pronunciation="新しい発音をカタカナで入力してください。",
-    accent_type="アクセントの種類を入力してください。"
+    word="登録する単語を入力してください。",
+    new_pronunciation="単語の発音をカタカナで入力してください。",
+    accent_type="アクセントの種類を入力してください。",
+    word_type="単語の品詞を選択してください。"
 )
-async def edit_word_command(interaction: discord.Interaction, word: str, new_pronunciation: str, accent_type: int):
+@app_commands.choices(word_type=word_type_choices)
+async def edit_word_command(interaction: discord.Interaction, word: str, new_pronunciation: str, accent_type: int, word_type: None):
     # 単語のUUIDを取得
     word_uuid = get_word_uuid(word)
     if word_uuid:
         # 辞書をAPIサーバーに登録
-        response = requests.put(f"http://127.0.0.1:10101/user_dict_word/{word_uuid}", json={"surface": word, "pronunciation": new_pronunciation, "accent_type": accent_type})
+        response = requests.put(f"http://127.0.0.1:10101/user_dict_word/?{word_uuid}&surface={word}&pronunciation={new_pronunciation}&accent_type={accent_type}&word_type={word_type}")
         if response.status_code == 200:
-            await interaction.response.send_message(f"単語 '{word}' の発音を '{new_pronunciation}' に編集しました。")
+            await interaction.response.send_message(f"単語 '{word}' の発音を '{new_pronunciation}', アクセント '{accent_type}', 品詞 '{word_type}' に編集しました。")
         else:
             await interaction.response.send_message(f"単語 '{word}' の編集に失敗しました。", ephemeral=True)
     else:
@@ -435,7 +454,7 @@ async def remove_word_command(interaction: discord.Interaction, word: str):
     word_uuid = get_word_uuid(word)
     if word_uuid:
         # 辞書をAPIサーバーから削除
-        response = requests.delete(f"http://127.0.0.1:10101/user_dict_word/{word_uuid}")
+        response = requests.put(f"http://127.0.0.1:10101/user_dict_word/?{word_uuid}")
         if response.status_code == 200:
             await interaction.response.send_message(f"単語 '{word}' を辞書から削除しました。")
         else:
