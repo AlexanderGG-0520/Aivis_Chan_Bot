@@ -19,7 +19,7 @@ client = discord.Client(intents=intents, activity=activity)
 tree = app_commands.CommandTree(client)
 voice_clients = {}
 text_channels = {}
-current_speaker = 888753760  # デフォルトの話者ID
+current_speaker = {}  # ギルドごとに話者を設定するための辞書
 
 FFMPEG_PATH = "C:/ffmpeg/bin/ffmpeg.exe"
 
@@ -127,7 +127,7 @@ async def join_command(interaction: discord.Interaction, voice_channel: discord.
             server_statuses[interaction.guild.id] = ServerStatus(interaction.guild.id)
         
         # 接続完了時に音声を鳴らす
-        path = speak_voice("接続しました。", current_speaker)
+        path = speak_voice("接続しました。", current_speaker.get(interaction.guild.id, 888753760))
         while voice_clients[interaction.guild.id].is_playing():
             await asyncio.sleep(1)
         voice_clients[interaction.guild.id].play(create_ffmpeg_audio_source(path))
@@ -162,7 +162,7 @@ async def on_voice_state_update(member, before, after):
             # ユーザーがボイスチャンネルに参加したとき
             if voice_clients[member.guild.id].channel == after.channel:
                 nickname = member.display_name
-                path = speak_voice(f"{nickname} が入室しました。", current_speaker)
+                path = speak_voice(f"{nickname} が入室しました。", current_speaker.get(member.guild.id, 888753760))
                 while voice_clients[member.guild.id].is_playing():
                     await asyncio.sleep(1)
                 voice_clients[member.guild.id].play(create_ffmpeg_audio_source(path))
@@ -170,7 +170,7 @@ async def on_voice_state_update(member, before, after):
             # ユーザーがボイスチャンネルから退出したとき
             if voice_clients[member.guild.id].channel == before.channel:
                 nickname = member.display_name
-                path = speak_voice(f"{nickname} が退室しました。", current_speaker)
+                path = speak_voice(f"{nickname} が退室しました。", current_speaker.get(member.guild.id, 888753760))
                 while voice_clients[member.guild.id].is_playing():
                     await asyncio.sleep(1)
                 voice_clients[member.guild.id].play(create_ffmpeg_audio_source(path))
