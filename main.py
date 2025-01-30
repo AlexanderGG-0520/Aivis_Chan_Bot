@@ -276,7 +276,6 @@ async def handle_message(message, voice_client):
             voice_client.play(create_ffmpeg_audio_source(path))
             while voice_client.is_playing():
                 await asyncio.sleep(1)
-            path = speak_voice(text, speaker_id, message.guild.id)
     print(f"Finished playing message: {message.content}")
 
 import json
