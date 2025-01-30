@@ -225,7 +225,7 @@ with open('speakers.json', 'r', encoding='utf-8') as f:
 
 # スピーカー名とスタイルのリストを作成
 speaker_choices = [
-    app_commands.Choice(name=f"{speaker['name']} - {style['name']}", value=f"{speaker['id']}-{style['id']}")
+    app_commands.Choice(name=f"{speaker['name']} - {style['name']}", value=f"{speaker.get('id')}-{style.get('id')}")
     for speaker in speakers
     for style in speaker.get('styles', [])
 ]
@@ -233,9 +233,9 @@ speaker_choices = [
 def get_speaker_info_by_choice(choice: str):
     speaker_id, style_id = map(int, choice.split('-'))
     for speaker in speakers:
-        if speaker['id'] == speaker_id:
+        if speaker.get('id') == speaker_id:
             for style in speaker.get('styles', []):
-                if style['id'] == style_id:
+                if style.get('id') == style_id:
                     return speaker, style
     return None, None
 
