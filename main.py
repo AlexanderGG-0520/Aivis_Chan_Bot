@@ -123,6 +123,7 @@ def apply_dictionary(text: str, guild_id: int) -> str:
     if guild_id in dictionaries:
         for word, pronunciation in dictionaries[guild_id].items():
             text = text.replace(word, pronunciation)
+    print(f"Applied dictionary for guild {guild_id}: {dictionaries.get(guild_id, {})}")  # デバッグ用に辞書を出力
     return text
 
 def speak_voice(text: str, speaker: int, guild_id: int):
@@ -220,7 +221,7 @@ async def on_voice_state_update(member, before, after):
             # ユーザーがボイスチャンネルに参加したとき
             if voice_clients[member.guild.id].channel == after.channel:
                 nickname = member.display_name
-                path = speak_voice(f"{nickname} が入室しました。", current_speaker.get(member.guild.id, 888753760), member.guild.id)
+                path = speak_voice(f"{nickname} さんが入室しました。", current_speaker.get(member.guild.id, 888753760), member.guild.id)
                 while voice_clients[member.guild.id].is_playing():
                     await asyncio.sleep(1)
                 voice_clients[member.guild.id].play(create_ffmpeg_audio_source(path))
@@ -228,7 +229,7 @@ async def on_voice_state_update(member, before, after):
             # ユーザーがボイスチャンネルから退出したとき
             if voice_clients[member.guild.id].channel == before.channel:
                 nickname = member.display_name
-                path = speak_voice(f"{nickname} が退室しました。", current_speaker.get(member.guild.id, 888753760), member.guild.id)
+                path = speak_voice(f"{nickname} さんが退室しました。", current_speaker.get(member.guild.id, 888753760), member.guild.id)
                 while voice_clients[member.guild.id].is_playing():
                     await asyncio.sleep(1)
                 voice_clients[member.guild.id].play(create_ffmpeg_audio_source(path))
@@ -269,12 +270,11 @@ async def on_message(message):
 async def handle_message(message, voice_client):
     print(f"Handling message: {message.content}")
     speaker_id = current_speaker.get(message.guild.id, 888753760)  # デフォルトの話者ID
-    path = speak_voice(speaker_id, message.guild.id)
-    for text in apply_dictionary(message.content, message.guild.id).split("\n"):
-        if text in message.content:
-            voice_client.play(create_ffmpeg_audio_source(path))
-            while voice_client.is_playing():
-                await asyncio.sleep(1)
+    text = apply_dictionary(message.content, message.guild.id)
+    path = speak_voice(text, speaker_id, message.guild.id)
+    while voice_client.is_playing():
+        await asyncio.sleep(0.1)
+    voice_client.play(create_ffmpeg_audio_source(path))
     print(f"Finished playing message: {message.content}")
 
 import json
