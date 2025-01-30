@@ -110,16 +110,22 @@ def add_to_dictionary(guild_id: int, word: str, pronunciation: str):
         guild_dictionaries[guild_id] = {}
     guild_dictionaries[guild_id][word] = pronunciation
     save_dictionaries()
+    # 辞書をAPIサーバーに登録
+    requests.post("http://localhost:10101/user_dict", json={"surface": word, "pronunciation": pronunciation})
 
 def edit_dictionary(guild_id: int, word: str, new_pronunciation: str):
     if guild_id in guild_dictionaries and word in guild_dictionaries[guild_id]:
         guild_dictionaries[guild_id][word] = new_pronunciation
         save_dictionaries()
+        # 辞書をAPIサーバーに登録
+        requests.post("http://localhost:10101/user_dict", json={"surface": word, "pronunciation": new_pronunciation})
 
 def remove_from_dictionary(guild_id: int, word: str):
     if guild_id in guild_dictionaries and word in guild_dictionaries[guild_id]:
         del guild_dictionaries[guild_id][word]
         save_dictionaries()
+        # 辞書をAPIサーバーから削除
+        requests.delete("http://localhost:10101/user_dict", json={"surface": word})
 
 def apply_dictionary(text: str, guild_id: int) -> str:
     load_dictionaries()  # 辞書を再読み込み
