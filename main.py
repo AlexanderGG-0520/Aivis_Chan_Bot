@@ -394,6 +394,14 @@ async def add_word_command(interaction: discord.Interaction, word: str, pronunci
     else:
         await interaction.response.send_message(f"単語 '{word}' の登録に失敗しました。", ephemeral=True)
 
+def get_word_uuid(word: str):
+    response = requests.get(f"http://localhost:10101/user_dict_word?surface={word}")
+    if response.status_code == 200:
+        word_data = response.json()
+        if word_data:
+            return word_data[0].get("uuid")
+    return None
+
 @tree.command(
     name="edit_word", description="辞書の単語を編集します。"
 )
@@ -402,12 +410,17 @@ async def add_word_command(interaction: discord.Interaction, word: str, pronunci
     new_pronunciation="新しい発音をカタカナで入力してください。"
 )
 async def edit_word_command(interaction: discord.Interaction, word: str, new_pronunciation: str):
-    # 辞書をAPIサーバーに登録
-    response = requests.post("http://localhost:10101/user_dict_word", json={"surface": word, "pronunciation": new_pronunciation})
-    if response.status_code == 200:
-        await interaction.response.send_message(f"単語 '{word}' の発音を '{new_pronunciation}' に編集しました。")
+    # 単語のUUIDを取得
+    word_uuid = get_word_uuid(word)
+    if word_uuid:
+        # 辞書をAPIサーバーに登録
+        response = requests.put(f"http://localhost:10101/user_dict_word/{word_uuid}", json={"surface": word, "pronunciation": new_pronunciation})
+        if response.status_code == 200:
+            await interaction.response.send_message(f"単語 '{word}' の発音を '{new_pronunciation}' に編集しました。")
+        else:
+            await interaction.response.send_message(f"単語 '{word}' の編集に失敗しました。", ephemeral=True)
     else:
-        await interaction.response.send_message(f"単語 '{word}' の編集に失敗しました。", ephemeral=True)
+        await interaction.response.send_message(f"単語 '{word}' が見つかりませんでした。", ephemeral=True)
 
 @tree.command(
     name="remove_word", description="辞書から単語を削除します。"
@@ -416,12 +429,17 @@ async def edit_word_command(interaction: discord.Interaction, word: str, new_pro
     word="削除する単語を入力してください。"
 )
 async def remove_word_command(interaction: discord.Interaction, word: str):
-    # 辞書をAPIサーバーから削除
-    response = requests.delete("http://localhost:10101/user_dict_word", json={"surface": word})
-    if response.status_code == 200:
-        await interaction.response.send_message(f"単語 '{word}' を辞書から削除しました。")
+    # 単語のUUIDを取得
+    word_uuid = get_word_uuid(word)
+    if word_uuid:
+        # 辞書をAPIサーバーから削除
+        response = requests.delete(f"http://localhost:10101/user_dict_word/{word_uuid}")
+        if response.status_code == 200:
+            await interaction.response.send_message(f"単語 '{word}' を辞書から削除しました。")
+        else:
+            await interaction.response.send_message(f"単語 '{word}' の削除に失敗しました。", ephemeral=True)
     else:
-        await interaction.response.send_message(f"単語 '{word}' の削除に失敗しました。", ephemeral=True)
+        await interaction.response.send_message(f"単語 '{word}' が見つかりませんでした。", ephemeral=True)
 
 print(f"TOKEN: {TOKEN}")  # デバッグ用にTOKENを出力
 client.run(TOKEN)
