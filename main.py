@@ -245,7 +245,7 @@ def get_speaker_info_by_name(speaker_name: str):
 async def set_speaker_command(interaction: discord.Interaction, speaker_name: str):
     global current_speaker
     speaker_info = get_speaker_info_by_name(speaker_name)
-    if speaker_info:
+    if speaker_info and 'id' in speaker_info:
         current_speaker[interaction.guild.id] = speaker_info['id']
         await interaction.response.send_message(f"話者を {speaker_name} に切り替えました。スタイル: {speaker_info.get('styles', 'なし')}")
     else:
