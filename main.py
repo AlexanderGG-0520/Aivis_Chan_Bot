@@ -225,7 +225,7 @@ with open('speakers.json', 'r', encoding='utf-8') as f:
 
 # スピーカー名とスタイルのリストを作成
 speaker_choices = [
-    app_commands.Choice(name=f"{speaker['name']} - {style['name']}", value=f"{speaker['id']}-{style['id']}")
+    app_commands.Choice(name=f"{speaker.get('name')} - {style.get('name')}", value=f"{speaker.get('id')}-{style.get('id')}")
     for speaker in speakers
     for style in speaker.get('styles', [])
 ]
@@ -250,6 +250,7 @@ def get_speaker_info_by_choice(choice: str):
 )
 @app_commands.choices(speaker_choice=speaker_choices)
 async def set_speaker_command(interaction: discord.Interaction, speaker_choice: str):
+    print(f"Received speaker_choice: {speaker_choice}")  # デバッグ用にspeaker_choiceを出力
     global current_speaker
     speaker_info, style_info = get_speaker_info_by_choice(speaker_choice)
     if speaker_info and style_info:
