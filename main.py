@@ -390,6 +390,7 @@ async def set_tempo_command(interaction: discord.Interaction, tempo: float):
 )
 async def add_word_command(interaction: discord.Interaction, word: str, pronunciation: str):
     add_to_dictionary(interaction.guild.id, word, pronunciation)
+    load_dictionaries()  # 追加後に辞書を再読み込み
     await interaction.response.send_message(f"単語 '{word}' を発音 '{pronunciation}' で辞書に登録しました。")
 
 @tree.command(
@@ -401,6 +402,7 @@ async def add_word_command(interaction: discord.Interaction, word: str, pronunci
 )
 async def edit_word_command(interaction: discord.Interaction, word: str, new_pronunciation: str):
     edit_dictionary(interaction.guild.id, word, new_pronunciation)
+    load_dictionaries()  # 編集後に辞書を再読み込み
     await interaction.response.send_message(f"単語 '{word}' の発音を '{new_pronunciation}' に編集しました。")
 
 @tree.command(
@@ -411,6 +413,7 @@ async def edit_word_command(interaction: discord.Interaction, word: str, new_pro
 )
 async def remove_word_command(interaction: discord.Interaction, word: str):
     remove_from_dictionary(interaction.guild.id, word)
+    load_dictionaries()  # 削除後に辞書を再読み込み
     await interaction.response.send_message(f"単語 '{word}' を辞書から削除しました。")
 
 print(f"TOKEN: {TOKEN}")  # デバッグ用にTOKENを出力
