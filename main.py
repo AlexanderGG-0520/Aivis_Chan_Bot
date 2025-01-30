@@ -229,10 +229,10 @@ speaker_choices = [
     for speaker in speakers
 ]
 
-def get_speaker_id_by_name(speaker_name: str) -> int:
+def get_speaker_info_by_name(speaker_name: str):
     for speaker in speakers:
         if speaker['name'] == speaker_name:
-            return speaker['id']
+            return speaker
     return None
 
 @tree.command(
@@ -244,10 +244,10 @@ def get_speaker_id_by_name(speaker_name: str) -> int:
 @app_commands.choices(speaker_name=speaker_choices)
 async def set_speaker_command(interaction: discord.Interaction, speaker_name: str):
     global current_speaker
-    speaker_id = get_speaker_id_by_name(speaker_name)
-    if speaker_id:
-        current_speaker[interaction.guild.id] = speaker_id
-        await interaction.response.send_message(f"話者を {speaker_name} に切り替えました。")
+    speaker_info = get_speaker_info_by_name(speaker_name)
+    if speaker_info:
+        current_speaker[interaction.guild.id] = speaker_info['id']
+        await interaction.response.send_message(f"話者を {speaker_name} に切り替えました。スタイル: {speaker_info.get('styles', 'なし')}")
     else:
         await interaction.response.send_message("無効な話者名です。", ephemeral=True)
 
