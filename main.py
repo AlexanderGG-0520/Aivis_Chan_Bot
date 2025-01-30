@@ -122,10 +122,11 @@ def remove_from_dictionary(guild_id: int, word: str):
         save_dictionaries()
 
 def apply_dictionary(text: str, guild_id: int) -> str:
+    load_dictionaries()  # 辞書を再読み込み
     if guild_id in guild_dictionaries:
         for word, pronunciation in guild_dictionaries[guild_id].items():
             text = text.replace(word, pronunciation)
-    print(f"Applied dictionary for guild {guild_id}: {guild_dictionaries.get(guild_id, text)}")  # デバッグ用に辞書を出力
+    print(f"Applied dictionary for guild {guild_id}: {guild_dictionaries.get(guild_id, {})}")  # デバッグ用に辞書を出力
     return text
 
 def speak_voice(text: str, speaker: int, guild_id: int):
@@ -278,6 +279,7 @@ async def handle_message(message, voice_client):
         await asyncio.sleep(0.1)
     voice_client.play(create_ffmpeg_audio_source(path))
     print(f"Finished playing message: {message.content}")
+        
 
 import json
 
