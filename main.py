@@ -39,7 +39,7 @@ class AivisAdapter:
         # APIサーバーのエンドポイントURL
         self.URL = "http://127.0.0.1:10101"
         # 話者ID (話させたい音声モデルidに変更してください)
-        self.speaker = 888753760
+        self.speaker = {}
 
     def speak_voice(self, text: str, voice_client: discord.VoiceClient):
         params = {"text": text, "speaker": self.speaker}
@@ -223,33 +223,37 @@ import json
 with open('speakers.json', 'r', encoding='utf-8') as f:
     speakers = json.load(f)
 
-# スピーカー名のリストを作成
+# スピーカー名とスタイルのリストを作成
 speaker_choices = [
-    app_commands.Choice(name=speaker['name'], value=speaker['name'])
+    app_commands.Choice(name=f"{speaker['name']} - {style['name']}", value=f"{speaker['id']}-{style['id']}")
     for speaker in speakers
+    for style in speaker.get('styles', [])
 ]
 
-def get_speaker_info_by_name(speaker_name: str):
+def get_speaker_info_by_choice(choice: str):
+    speaker_id, style_id = map(int, choice.split('-'))
     for speaker in speakers:
-        if speaker['name'] == speaker_name:
-            return speaker
-    return None
+        if speaker['id'] == speaker_id:
+            for style in speaker.get('styles', []):
+                if style['id'] == style_id:
+                    return speaker, style
+    return None, None
 
 @tree.command(
     name="set_speaker", description="話者を切り替えます。"
 )
 @app_commands.describe(
-    speaker_name="設定する話者の名前を選択してください。"
+    speaker_choice="設定する話者とスタイルを選択してください。"
 )
-@app_commands.choices(speaker_name=speaker_choices)
-async def set_speaker_command(interaction: discord.Interaction, speaker_name: str):
+@app_commands.choices(speaker_choice=speaker_choices)
+async def set_speaker_command(interaction: discord.Interaction, speaker_choice: str):
     global current_speaker
-    speaker_info = get_speaker_info_by_name(speaker_name)
-    if speaker_info and 'id' in speaker_info:
-        current_speaker[interaction.guild.id] = speaker_info['id']
-        await interaction.response.send_message(f"話者を {speaker_name} に切り替えました。スタイル: {speaker_info.get('styles', 'なし')}")
+    speaker_info, style_info = get_speaker_info_by_choice(speaker_choice)
+    if speaker_info and style_info:
+        current_speaker[interaction.guild.id] = style_info['id']
+        await interaction.response.send_message(f"話者を {speaker_info['name']} のスタイル {style_info['name']} に切り替えました。")
     else:
-        await interaction.response.send_message("無効な話者名です。", ephemeral=True)
+        await interaction.response.send_message("無効な選択です。", ephemeral=True)
 
 print(f"TOKEN: {TOKEN}")  # デバッグ用にTOKENを出力
 client.run(TOKEN)
