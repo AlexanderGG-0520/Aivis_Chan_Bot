@@ -88,7 +88,14 @@ def adjust_audio_query(audio_query: dict, guild_id: int):
     audio_query["tempoScale"] = voice_settings["tempo"].get(guild_id, 1.0)
     return audio_query
 
+def apply_dictionary(text: str, guild_id: int) -> str:
+    if guild_id in guild_dictionaries:
+        for word, pronunciation in guild_dictionaries[guild_id].items():
+            text = text.replace(word, pronunciation)
+    return text
+
 def speak_voice(text: str, speaker: int, guild_id: int):
+    text = apply_dictionary(text, guild_id)
     audio_query = post_audio_query(text, speaker)
     audio_query = adjust_audio_query(audio_query, guild_id)
     audio_content = post_synthesis(audio_query, speaker)
