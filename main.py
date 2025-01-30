@@ -88,22 +88,6 @@ def adjust_audio_query(audio_query: dict, guild_id: int):
     audio_query["tempoScale"] = voice_settings["tempo"].get(guild_id, 1.0)
     return audio_query
 
-def apply_dictionary(text: str, guild_id: int) -> str:
-    if guild_id in guild_dictionaries:
-        for word, pronunciation in guild_dictionaries[guild_id].items():
-            text = text.replace(word, pronunciation)
-    return text
-
-def speak_voice(text: str, speaker: int, guild_id: int):
-    text = apply_dictionary(text, guild_id)
-    audio_query = post_audio_query(text, speaker)
-    audio_query = adjust_audio_query(audio_query, guild_id)
-    audio_content = post_synthesis(audio_query, speaker)
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio_file:
-        temp_audio_file.write(audio_content)
-        temp_audio_file_path = temp_audio_file.name
-    return temp_audio_file_path
-
 DICTIONARY_FILE = "guild_dictionaries.json"
 
 def load_dictionaries():
@@ -133,6 +117,23 @@ def remove_from_dictionary(guild_id: int, word: str):
     if guild_id in guild_dictionaries and word in guild_dictionaries[guild_id]:
         del guild_dictionaries[guild_id][word]
         save_dictionaries()
+
+def apply_dictionary(text: str, guild_id: int) -> str:
+    dictionaries = load_dictionaries()
+    if guild_id in dictionaries:
+        for word, pronunciation in dictionaries[guild_id].items():
+            text = text.replace(word, pronunciation)
+    return text
+
+def speak_voice(text: str, speaker: int, guild_id: int):
+    text = apply_dictionary(text, guild_id)
+    audio_query = post_audio_query(text, speaker)
+    audio_query = adjust_audio_query(audio_query, guild_id)
+    audio_content = post_synthesis(audio_query, speaker)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio_file:
+        temp_audio_file.write(audio_content)
+        temp_audio_file_path = temp_audio_file.name
+    return temp_audio_file_path
 
 @client.event
 async def on_ready():
