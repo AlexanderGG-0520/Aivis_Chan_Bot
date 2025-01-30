@@ -71,7 +71,7 @@ def post_synthesis(audio_query: dict, speaker: int):
     return response.content
 
 voice_settings = {
-    "volume": {},
+    "volume": {},  # デフォルトの音量を0.2に設定
     "pitch": {},
     "rate": {},
     "speed": {},
@@ -80,7 +80,7 @@ voice_settings = {
 }
 
 def adjust_audio_query(audio_query: dict, guild_id: int):
-    audio_query["volumeScale"] = voice_settings["volume"].get(guild_id, 1.0)
+    audio_query["volumeScale"] = voice_settings["volume"].get(guild_id, 0.2)  # デフォルトの音量を0.2に設定
     audio_query["pitchScale"] = voice_settings["pitch"].get(guild_id, 0.0)
     audio_query["rateScale"] = voice_settings["rate"].get(guild_id, 1.0)
     audio_query["speedScale"] = voice_settings["speed"].get(guild_id, 1.0)
@@ -111,32 +111,23 @@ def add_to_dictionary(guild_id: int, word: str, pronunciation: str):
     guild_dictionaries[guild_id][word] = pronunciation
     save_dictionaries()
     # 辞書をAPIサーバーに登録
-    requests.post("http://localhost:10101/user_dict", json={"surface": word, "pronunciation": pronunciation})
+    requests.post("http://localhost:10101/user_dict_word", json={"surface": word, "pronunciation": pronunciation})
 
 def edit_dictionary(guild_id: int, word: str, new_pronunciation: str):
     if guild_id in guild_dictionaries and word in guild_dictionaries[guild_id]:
         guild_dictionaries[guild_id][word] = new_pronunciation
         save_dictionaries()
         # 辞書をAPIサーバーに登録
-        requests.post("http://localhost:10101/user_dict", json={"surface": word, "pronunciation": new_pronunciation})
+        requests.post("http://localhost:10101/user_dict_word", json={"surface": word, "pronunciation": new_pronunciation})
 
 def remove_from_dictionary(guild_id: int, word: str):
     if guild_id in guild_dictionaries and word in guild_dictionaries[guild_id]:
         del guild_dictionaries[guild_id][word]
         save_dictionaries()
         # 辞書をAPIサーバーから削除
-        requests.delete("http://localhost:10101/user_dict", json={"surface": word})
-
-def apply_dictionary(text: str, guild_id: int) -> str:
-    load_dictionaries()  # 辞書を再読み込み
-    if guild_id in guild_dictionaries:
-        for word, pronunciation in guild_dictionaries[guild_id].items():
-            text = text.replace(word, pronunciation)
-    print(f"Applied dictionary for guild {guild_id}: {guild_dictionaries.get(guild_id, {})}")  # デバッグ用に辞書を出力
-    return text
+        requests.delete("http://localhost:10101/user_dict_word", json={"surface": word})
 
 def speak_voice(text: str, speaker: int, guild_id: int):
-    text = apply_dictionary(text, guild_id)
     audio_query = post_audio_query(text, speaker)
     audio_query = adjust_audio_query(audio_query, guild_id)
     audio_content = post_synthesis(audio_query, speaker)
@@ -279,8 +270,7 @@ async def on_message(message):
 async def handle_message(message, voice_client):
     print(f"Handling message: {message.content}")
     speaker_id = current_speaker.get(message.guild.id, 888753760)  # デフォルトの話者ID
-    text = apply_dictionary(message.content, message.guild.id)
-    path = speak_voice(text, speaker_id, message.guild.id)
+    path = speak_voice(message.content, speaker_id, message.guild.id)
     while voice_client.is_playing():
         await asyncio.sleep(0.1)
     voice_client.play(create_ffmpeg_audio_source(path))
@@ -397,9 +387,12 @@ async def set_tempo_command(interaction: discord.Interaction, tempo: float):
     pronunciation="単語の発音を入力してください。"
 )
 async def add_word_command(interaction: discord.Interaction, word: str, pronunciation: str):
-    add_to_dictionary(interaction.guild.id, word, pronunciation)
-    load_dictionaries()  # 追加後に辞書を再読み込み
-    await interaction.response.send_message(f"単語 '{word}' を発音 '{pronunciation}' で辞書に登録しました。")
+    # 辞書をAPIサーバーに登録
+    response = requests.post("http://localhost:10101/user_dict_word", json={"surface": word, "pronunciation": pronunciation})
+    if response.status_code == 200:
+        await interaction.response.send_message(f"単語 '{word}' を発音 '{pronunciation}' で辞書に登録しました。")
+    else:
+        await interaction.response.send_message(f"単語 '{word}' の登録に失敗しました。", ephemeral=True)
 
 @tree.command(
     name="edit_word", description="辞書の単語を編集します。"
@@ -409,9 +402,12 @@ async def add_word_command(interaction: discord.Interaction, word: str, pronunci
     new_pronunciation="新しい発音を入力してください。"
 )
 async def edit_word_command(interaction: discord.Interaction, word: str, new_pronunciation: str):
-    edit_dictionary(interaction.guild.id, word, new_pronunciation)
-    load_dictionaries()  # 編集後に辞書を再読み込み
-    await interaction.response.send_message(f"単語 '{word}' の発音を '{new_pronunciation}' に編集しました。")
+    # 辞書をAPIサーバーに登録
+    response = requests.post("http://localhost:10101/user_dict_word", json={"surface": word, "pronunciation": new_pronunciation})
+    if response.status_code == 200:
+        await interaction.response.send_message(f"単語 '{word}' の発音を '{new_pronunciation}' に編集しました。")
+    else:
+        await interaction.response.send_message(f"単語 '{word}' の編集に失敗しました。", ephemeral=True)
 
 @tree.command(
     name="remove_word", description="辞書から単語を削除します。"
@@ -420,9 +416,12 @@ async def edit_word_command(interaction: discord.Interaction, word: str, new_pro
     word="削除する単語を入力してください。"
 )
 async def remove_word_command(interaction: discord.Interaction, word: str):
-    remove_from_dictionary(interaction.guild.id, word)
-    load_dictionaries()  # 削除後に辞書を再読み込み
-    await interaction.response.send_message(f"単語 '{word}' を辞書から削除しました。")
+    # 辞書をAPIサーバーから削除
+    response = requests.delete("http://localhost:10101/user_dict_word", json={"surface": word})
+    if response.status_code == 200:
+        await interaction.response.send_message(f"単語 '{word}' を辞書から削除しました。")
+    else:
+        await interaction.response.send_message(f"単語 '{word}' の削除に失敗しました。", ephemeral=True)
 
 print(f"TOKEN: {TOKEN}")  # デバッグ用にTOKENを出力
 client.run(TOKEN)
